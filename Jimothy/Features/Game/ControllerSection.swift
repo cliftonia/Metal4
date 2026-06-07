@@ -8,14 +8,19 @@
 import SwiftUI
 
 /// The bottom third: a directional pad, system buttons, and action buttons.
-/// Layout only for now — controls are inert.
+/// The left/right arrows drive the boot-screen style picker; other controls
+/// are inert for now.
 struct ControllerSection: View {
+    var onLeft: () -> Void = {}
+    var onRight: () -> Void = {}
+    var onStart: () -> Void = {}
+
     var body: some View {
         VStack(spacing: 20) {
-            SystemButtons()
+            SystemButtons(onStart: onStart)
 
             HStack(spacing: 40) {
-                DirectionPad()
+                DirectionPad(onLeft: onLeft, onRight: onRight)
                     .frame(maxWidth: .infinity, alignment: .center)
 
                 ActionButtons()
@@ -32,13 +37,16 @@ struct ControllerSection: View {
 /// A directional cross of four buttons. Buttons and spacing follow the 8pt grid;
 /// the 160×160pt footprint mirrors the action button diamond.
 private struct DirectionPad: View {
+    var onLeft: () -> Void = {}
+    var onRight: () -> Void = {}
+
     var body: some View {
         VStack(spacing: 8) {
             DPadButton(systemName: "chevron.up", label: "Up")
             HStack(spacing: 8) {
-                DPadButton(systemName: "chevron.left", label: "Left")
+                DPadButton(systemName: "chevron.left", label: "Left", action: onLeft)
                 Color.clear.frame(width: 48, height: 48)
-                DPadButton(systemName: "chevron.right", label: "Right")
+                DPadButton(systemName: "chevron.right", label: "Right", action: onRight)
             }
             DPadButton(systemName: "chevron.down", label: "Down")
         }
@@ -49,11 +57,10 @@ private struct DirectionPad: View {
 private struct DPadButton: View {
     let systemName: String
     let label: String
+    var action: () -> Void = {}
 
     var body: some View {
-        Button {
-            // TODO: wire to presenter action when behaviour is added.
-        } label: {
+        Button(action: action) {
             Image(systemName: systemName)
                 .font(.title2)
                 .foregroundStyle(.white)
@@ -66,10 +73,12 @@ private struct DPadButton: View {
 
 /// The Select and Start system buttons, centred above the controls.
 private struct SystemButtons: View {
+    var onStart: () -> Void = {}
+
     var body: some View {
         HStack(spacing: 16) {
             SystemButton(title: "Select")
-            SystemButton(title: "Start")
+            SystemButton(title: "Start", action: onStart)
         }
     }
 }
@@ -77,11 +86,10 @@ private struct SystemButtons: View {
 /// A single capsule-shaped system button.
 private struct SystemButton: View {
     let title: String
+    var action: () -> Void = {}
 
     var body: some View {
-        Button {
-            // TODO: wire to presenter action when behaviour is added.
-        } label: {
+        Button(action: action) {
             Text(title.uppercased())
                 .font(.caption.bold())
                 .foregroundStyle(.white)
