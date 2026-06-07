@@ -3,6 +3,9 @@ included:
   - JimothyTests
   - JimothyUITests
 
+disabled_rules:
+  - todo # JIRA-tagged TODOs are permitted by the project's conventions
+
 line_length:
   warning: 160
   error: 200
