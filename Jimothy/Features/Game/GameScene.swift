@@ -22,11 +22,12 @@ final class GameScene: SKScene {
 
     private let walkSpeed: CGFloat = 200
     private let hero = SKSpriteNode()
+    private let backdrop = SKSpriteNode(imageNamed: "village")
 
     private var moveDirection: Direction?
     private var facing: Direction = .down
     private var lastUpdate: TimeInterval = 0
-    private var hasCenteredHero = false
+    private var hasLaidOutScene = false
 
     private var walkFrames: [Direction: [SKTexture]] = [:]
     private var idleFrame: [Direction: SKTexture] = [:]
@@ -34,15 +35,17 @@ final class GameScene: SKScene {
     private let walkKey = "walk"
 
     override func didMove(to view: SKView) {
-        backgroundColor = SKColor(red: 0.07, green: 0.09, blue: 0.13, alpha: 1)
-        drawGrid()
+        backgroundColor = SKColor(red: 0.09, green: 0.13, blue: 0.10, alpha: 1)
         loadTextures()
+
+        backdrop.texture?.filteringMode = .nearest
+        backdrop.zPosition = 0
+        addChild(backdrop)
 
         hero.texture = idleFrame[.down]
         hero.size = CGSize(width: 64, height: 64)
         hero.setScale(1.0)
         hero.zPosition = 10
-        hero.position = CGPoint(x: size.width / 2, y: size.height / 2)
         addChild(hero)
     }
 
@@ -66,9 +69,10 @@ final class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
-        if !hasCenteredHero {
+        layOutBackdrop()
+        if !hasLaidOutScene {
             hero.position = CGPoint(x: size.width / 2, y: size.height / 2)
-            hasCenteredHero = true
+            hasLaidOutScene = true
         }
 
         defer { lastUpdate = currentTime }
@@ -122,25 +126,13 @@ final class GameScene: SKScene {
         }
     }
 
-    private func drawGrid() {
-        let path = CGMutablePath()
-        let tile: CGFloat = 48
-        var x: CGFloat = 0
-        while x <= size.width {
-            path.move(to: CGPoint(x: x, y: 0))
-            path.addLine(to: CGPoint(x: x, y: size.height))
-            x += tile
-        }
-        var y: CGFloat = 0
-        while y <= size.height {
-            path.move(to: CGPoint(x: 0, y: y))
-            path.addLine(to: CGPoint(x: size.width, y: y))
-            y += tile
-        }
-        let grid = SKShapeNode(path: path)
-        grid.strokeColor = SKColor(white: 1, alpha: 0.06)
-        grid.lineWidth = 1
-        grid.zPosition = 1
-        addChild(grid)
+    /// Scales the backdrop to cover the view, centred. Cheap; run each frame so
+    /// it stays filled as SpriteView resolves its size.
+    private func layOutBackdrop() {
+        let textureSize = backdrop.texture?.size() ?? backdrop.size
+        guard textureSize.width > 0, textureSize.height > 0 else { return }
+        let fillScale = max(size.width / textureSize.width, size.height / textureSize.height)
+        backdrop.setScale(fillScale)
+        backdrop.position = CGPoint(x: size.width / 2, y: size.height / 2)
     }
 }
