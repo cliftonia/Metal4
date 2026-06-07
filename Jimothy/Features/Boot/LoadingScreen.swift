@@ -13,6 +13,8 @@ import SwiftUI
 struct LoadingScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var stage: Stage = .system
+    @State private var powerScaleY: CGFloat = 0.03
+    @State private var flashOpacity: CGFloat = 0
 
     private enum Stage {
         case system
@@ -24,8 +26,31 @@ struct LoadingScreen: View {
             content
                 .id(stage)
                 .transition(.opacity)
+
+            Color.white
+                .opacity(flashOpacity)
+                .allowsHitTesting(false)
         }
-        .task { await runSequence() }
+        .scaleEffect(x: 1, y: powerScaleY, anchor: .center)
+        .task { await boot() }
+    }
+
+    private func boot() async {
+        BootChime.play()
+        await powerOn()
+        await runSequence()
+    }
+
+    /// The CRT power-on: a bright line snaps open to fill the screen with a flash.
+    private func powerOn() async {
+        guard !reduceMotion else {
+            powerScaleY = 1
+            return
+        }
+        flashOpacity = 0.85
+        withAnimation(.easeOut(duration: 0.45)) { powerScaleY = 1 }
+        withAnimation(.easeOut(duration: 0.6)) { flashOpacity = 0 }
+        try? await Task.sleep(for: .seconds(0.45))
     }
 
     @ViewBuilder
@@ -84,8 +109,7 @@ private struct PressStartPrompt: View {
 
     var body: some View {
         Text("PRESS START")
-            .font(.system(size: 15, weight: .bold, design: .monospaced))
-            .tracking(4)
+            .font(.pressStart(11))
             .foregroundStyle(.white.opacity(0.9))
             .opacity(promptOpacity)
             .accessibilityLabel("Press Start")
