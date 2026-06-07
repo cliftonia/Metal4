@@ -34,6 +34,14 @@ final class GameScene: SKScene {
 
     private let walkKey = "walk"
 
+    // Collision in normalized backdrop space (x: 0→1 left→right, y: 0→1 top→bottom).
+    private let walkableArea = CGRect(x: 0.05, y: 0.30, width: 0.90, height: 0.62)
+    private let blockedAreas: [CGRect] = [
+        CGRect(x: 0.12, y: 0.32, width: 0.32, height: 0.20), // left house
+        CGRect(x: 0.55, y: 0.36, width: 0.31, height: 0.24), // right house
+        CGRect(x: 0.34, y: 0.66, width: 0.32, height: 0.26)  // pond
+    ]
+
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(red: 0.09, green: 0.13, blue: 0.10, alpha: 1)
         loadTextures()
@@ -78,21 +86,46 @@ final class GameScene: SKScene {
         defer { lastUpdate = currentTime }
         guard let direction = moveDirection, lastUpdate != 0 else { return }
 
-        let delta = CGFloat(currentTime - lastUpdate)
-        let distance = walkSpeed * delta
-        var position = hero.position
+        let distance = walkSpeed * CGFloat(currentTime - lastUpdate)
+        var deltaX: CGFloat = 0
+        var deltaY: CGFloat = 0
         switch direction {
-        case .up: position.y += distance
-        case .down: position.y -= distance
-        case .left: position.x -= distance
-        case .right: position.x += distance
+        case .up: deltaY = distance
+        case .down: deltaY = -distance
+        case .left: deltaX = -distance
+        case .right: deltaX = distance
         }
 
-        let halfWidth = hero.size.width * hero.xScale / 2
-        let halfHeight = hero.size.height * hero.yScale / 2
-        position.x = min(max(position.x, halfWidth), size.width - halfWidth)
-        position.y = min(max(position.y, halfHeight), size.height - halfHeight)
+        // Move per-axis so the hero slides along obstacles instead of sticking.
+        var position = hero.position
+        let tryX = CGPoint(x: position.x + deltaX, y: position.y)
+        if isWalkable(feet(of: tryX)) { position.x = tryX.x }
+        let tryY = CGPoint(x: position.x, y: position.y + deltaY)
+        if isWalkable(feet(of: tryY)) { position.y = tryY.y }
         hero.position = position
+    }
+
+    /// The hero's standing point — roughly his feet, used for collision.
+    private func feet(of position: CGPoint) -> CGPoint {
+        CGPoint(x: position.x, y: position.y - 26 * hero.yScale)
+    }
+
+    /// Whether a scene point falls on walkable ground (inside the platform and
+    /// clear of obstacles), tested in normalized backdrop space.
+    private func isWalkable(_ point: CGPoint) -> Bool {
+        let scaledWidth = backdrop.size.width * backdrop.xScale
+        let scaledHeight = backdrop.size.height * backdrop.yScale
+        guard scaledWidth > 0, scaledHeight > 0 else { return true }
+
+        let originX = backdrop.position.x - scaledWidth / 2
+        let originY = backdrop.position.y - scaledHeight / 2
+        let normalized = CGPoint(
+            x: (point.x - originX) / scaledWidth,
+            y: 1 - (point.y - originY) / scaledHeight
+        )
+
+        guard walkableArea.contains(normalized) else { return false }
+        return !blockedAreas.contains { $0.contains(normalized) }
     }
 
     // MARK: - Textures
