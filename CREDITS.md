@@ -2,8 +2,14 @@
 
 ## Character sprites — Liberated Pixel Cup (LPC)
 
-Jimothy's sprite sheet (`Jimothy/Resources/Sprites/jimothy_walk.png`) is composed
-from modular **Liberated Pixel Cup (LPC)** layers via `tools/compose_jimothy.py`.
+Character walk sheets are composed from modular **Liberated Pixel Cup (LPC)** layers
+(hand-made pixel art) via `tools/compose_jimothy.py` (adventurer) and
+`tools/compose_mage.py` (wizard). Layers are stacked back-to-front with Pillow and a few
+recoloured (hair/eyes/robe). Crisp, consistent, native 64px.
+
+> An AI reskin pipeline (single-pass img2img on local ComfyUI) was explored, but at sprite
+> scale it couldn't match LPC's crispness, so LPC is used for characters. AI is reserved
+> for backdrops, where it excels (see `town_portrait.png`).
 
 - Source: [Universal-LPC-Spritesheet-Character-Generator](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator)
 - Licence: **CC-BY-SA 4.0 / GPL 3.0** (attribution + share-alike required)
